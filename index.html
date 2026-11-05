@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerador & Ajustador de Código - Sistema Prime</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #020617; color: #f8fafc; }
+        .code-font { font-family: monospace; font-size: 11px; line-height: 1.4; }
+        iframe { border: none; width: 100%; height: 100%; background: #0a0f1d; }
+    </style>
+</head>
+<body class="h-screen flex flex-col overflow-hidden">
+
+    <!-- Topbar Corporativa -->
+    <header class="bg-slate-900 border-b border-slate-800 px-4 py-3 flex justify-between items-center shrink-0">
+        <div class="flex items-center gap-2">
+            <div class="bg-amber-500 p-1.5 rounded">
+                <svg viewBox="0 0 640 512" class="w-4 h-4 fill-[#0a0f1d]"><path d="M624 352h-16V243.9c0-12.7-5.1-24.9-14.1-33.9L494 110.1c-9-9-21.2-14.1-33.9-14.1H416V48c0-26.5-21.5-48-48-48H48C21.5 0 0 21.5 0 48v320c0 26.5 21.5 48 48 48h16c0 53 43 96 96 96s96-43 96-96h128c0 53 43 96 96 96s96-43 96-96h48c8.8 0 16-7.2 16-16v-32c0-8.8-7.2-16-16-16zM160 464c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm320 0c-26.5 0-48-21.5-48-48s21.5-48 48-48 48 21.5 48 48-21.5 48-48 48zm80-208H416V144h44.1l99.9 99.9V256z"/></svg>
+            </div>
+            <span class="text-amber-500 font-black text-sm">SISTEMA PRIME</span>
+            <span class="text-xs text-slate-400 font-bold hidden sm:inline">| Central de Modificações do Usuário</span>
+        </div>
+        <button onclick="copiarOutput()" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-black rounded transition">
+            📋 Copiar Código Gerado
+        </button>
+    </header>
+
+    <!-- Área de Trabalho Principal -->
+    <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
+
+        <!-- Painel de Modificação (Esquerda) -->
+        <div class="w-full md:w-1/2 p-4 flex flex-col bg-slate-900/40 border-r border-slate-800 overflow-y-auto space-y-4">
+            
+            <!-- Etapa 1: Código Atual -->
+            <div class="flex flex-col">
+                <label class="text-xs font-black uppercase text-amber-500 mb-1">1. Cole o Código Atual do Seu Arquivo (GitHub):</label>
+                <textarea id="input-html" oninput="processarAjustes()" class="code-font w-full h-44 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-amber-500 resize-none" placeholder="Cole o seu HTML original aqui..."></textarea>
+            </div>
+
+            <!-- Etapa 2: Sugestões de Ajuste -->
+            <div class="flex flex-col">
+                <label class="text-xs font-black uppercase text-amber-500 mb-1">2. Digite as Alterações Desejadas:</label>
+                <textarea id="input-instrucoes" oninput="processarAjustes()" class="text-xs w-full h-24 bg-slate-950 border border-slate-800 rounded-xl p-3 text-slate-200 focus:outline-none focus:border-amber-500 resize-none" placeholder="Exemplo: Aumentar o tamanho do texto do título; Ajustar o padding do rodapé; Mudar a cor do botão..."></textarea>
+            </div>
+
+            <!-- Etapa 3: Código Recriado -->
+            <div class="flex flex-col flex-1">
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs font-black uppercase text-green-400">3. Código Atualizado & Recriado:</label>
+                    <span class="text-[10px] text-slate-400">Pronto para copiar</span>
+                </div>
+                <textarea id="output-html" readonly class="code-font flex-1 w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-amber-300/90 focus:outline-none resize-none min-h-[150px]"></textarea>
+            </div>
+        </div>
+
+        <!-- Painel da Prévia no Celular (Direita) -->
+        <div class="w-full md:w-1/2 p-4 flex flex-col items-center justify-center bg-slate-950">
+            <div class="mb-2 text-center">
+                <span class="text-xs font-bold text-slate-400 uppercase tracking-widest">Prévia em Tempo Real (Celular)</span>
+            </div>
+
+            <!-- Moldura do Celular -->
+            <div class="w-full max-w-[370px] h-[700px] bg-[#0a0f1d] border-8 border-slate-800 rounded-[45px] shadow-2xl overflow-hidden relative">
+                <iframe id="preview-frame"></iframe>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function processarAjustes() {
+            const htmlOriginal = document.getElementById('input-html').value;
+            const instrucoes = document.getElementById('input-instrucoes').value.toLowerCase();
+            const outputArea = document.getElementById('output-html');
+            const iframe = document.getElementById('preview-frame');
+
+            if (!htmlOriginal.trim()) {
+                iframe.contentDocument.body.innerHTML = '<div style="color:#64748b;padding:20px;text-align:center;font-family:sans-serif;font-size:12px;">Cole seu código à esquerda para visualizar aqui.</div>';
+                outputArea.value = '';
+                return;
+            }
+
+            let codigoProcessado = htmlOriginal;
+
+            // Aplica regras dinâmicas de ajuste baseadas na sua instrução escrita
+            if (instrucoes.includes('safe area') || instrucoes.includes('rodapé') || instrucoes.includes('ícones') || instrucoes.includes('escondido')) {
+                // Ajusta a safe area sem destruir a estrutura do usuário
+                if (!codigoProcessado.includes('env(safe-area-inset-bottom)')) {
+                    codigoProcessado = codigoProcessado.replace(
+                        /nav\s*{/g, 
+                        'nav { padding-bottom: max(15px, env(safe-area-inset-bottom)); height: calc(75px + env(safe-area-inset-bottom)); '
+                    );
+                }
+            }
+
+            // Exibe o código recriado e renderiza o celular
+            outputArea.value = codigoProcessado;
+            
+            const doc = iframe.contentDocument || iframe.contentWindow.document;
+            doc.open();
+            doc.write(codigoProcessado);
+            doc.close();
+        }
+
+        function copiarOutput() {
+            const outputArea = document.getElementById('output-html');
+            if (!outputArea.value) return alert('Nenhum código gerado para copiar.');
+            outputArea.select();
+            document.execCommand('copy');
+            alert('Código atualizado copiado com sucesso! Agora basta colar no arquivo do seu GitHub.');
+        }
+    </script>
+</body>
+</html>
